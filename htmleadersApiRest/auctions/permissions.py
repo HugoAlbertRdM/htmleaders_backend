@@ -22,3 +22,19 @@ class IsBidderOrAdmin(permissions.BasePermission):
         if request.method in SAFE_METHODS:
             return True
         return obj.bidder_id == request.user or request.user.is_staff
+    
+
+class IsCommentAuthorOrAdmin(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.method in SAFE_METHODS or obj.user == request.user or request.user.is_staff
+    
+class IsRaterOrAdmin(permissions.BasePermission):
+    """
+    Permite editar/eliminar un rating solo si el usuario es el propietario
+    o es administrador. Cualquiera puede consultar (GET).
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+        return obj.rater_id == request.user or request.user.is_staff
+

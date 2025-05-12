@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Auction, Bid
+from .models import Category, Auction, Bid, Comment, Rating
 from django.utils import timezone
 from datetime import timedelta
 from drf_spectacular.utils import extend_schema_field
@@ -19,6 +19,7 @@ class AuctionListCreateSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
     closing_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ")
     isOpen = serializers.SerializerMethodField(read_only=True)
+    rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Auction
@@ -38,6 +39,7 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
     closing_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ")
     isOpen = serializers.SerializerMethodField(read_only=True)
+    rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Auction
@@ -61,4 +63,23 @@ class BidListCreateSerializer(serializers.ModelSerializer):
 class BidDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bid
+        fields = '__all__'
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at', 'user']
+
+class RatingListCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = '__all__'
+
+class RatingDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
         fields = '__all__'
