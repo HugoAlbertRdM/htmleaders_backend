@@ -11,8 +11,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from .models import CustomUser
-from auctions.models import Auction, Bid
-from .serializers import AuctionSerializer, BidSerializer
+from auctions.models import Auction, Bid, Comment, Rating
+from .serializers import AuctionSerializer, BidSerializer, CommentSerializer, RatingSerializer
 
 
 class UserRegisterView(generics.CreateAPIView):
@@ -122,4 +122,23 @@ class UserBidListView(APIView):
         # Obtenemos las pujas del usuario autenticado
         bids = Bid.objects.filter(bidder_id=request.user)
         serializer = BidSerializer(bids, many=True)
+        return Response(serializer.data)
+
+class UserCommentListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Obtenemos los ocmentarios del usuario autenticado
+        comments = Comment.objects.filter(user=request.user)
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data)
+
+
+class UserRatingsListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Obtenemos las pujas del usuario autenticado
+        ratings = Rating.objects.filter(rater_id=request.user)
+        serializer = RatingSerializer(ratings, many=True)
         return Response(serializer.data)

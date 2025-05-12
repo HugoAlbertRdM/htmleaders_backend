@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwnerOrAdmin, IsBidderOrAdmin, IsCommentAuthorOrAdmin, IsRaterOrAdmin
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from django.db.models import Avg
 
 class CategoryListCreate(generics.ListCreateAPIView):   
     queryset = Category.objects.all()
@@ -39,10 +40,13 @@ class AuctionListCreate(generics.ListCreateAPIView):
     
     def get_queryset(self):
         queryset = super().get_queryset()
+        queryset = Auction.objects.all().annotate(average_rating=Avg('ratings__rating'))
         params = self.request.query_params
         search = params.get('search', None)
         min_price = params.get('min')
         max_price = params.get('max')
+        min_rating = self.request.query_params.get('min_rating')
+        status = self.request.query_params.get('status', None)
 
         if search and len(search) < 3:
             raise ValidationError(
@@ -57,6 +61,15 @@ class AuctionListCreate(generics.ListCreateAPIView):
 
         if max_price:
             queryset = queryset.filter(price__lte=max_price)
+
+        if min_rating:
+            min_rating = float(min_rating)
+            queryset = queryset.filter(average_rating__gte=min_rating)
+
+        if status == 'open':
+            queryset = queryset.filter(closing_date__gt=timezone.now())
+        elif status == 'closed':
+            queryset = queryset.filter(closing_date__lte=timezone.now())
 
         return queryset
 
@@ -136,8 +149,6 @@ class UserBidListView(APIView):
         serializer = AuctionListCreateSerializer(user_bids, many=True)
         return Response(serializer.data)
     
-
-
 
 class CommentListCreate(generics.ListCreateAPIView):
     serializer_class = CommentSerializer
