@@ -3,14 +3,14 @@ from rest_framework import generics,status
 from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from .models import Category, Auction, Bid, Comment, Rating
+from .models import Category, Auction, Bid, Comment, Rating, Wallet
 from django.utils import timezone
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Q
-from .serializers import CategoryListCreateSerializer, CategoryDetailSerializer, AuctionListCreateSerializer, AuctionDetailSerializer, BidListCreateSerializer, CommentSerializer, RatingDetailSerializer, RatingListCreateSerializer
+from .serializers import CategoryListCreateSerializer, CategoryDetailSerializer, AuctionListCreateSerializer, AuctionDetailSerializer, BidListCreateSerializer, CommentSerializer, RatingDetailSerializer, RatingListCreateSerializer, WalletTransactionSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsOwnerOrAdmin, IsBidderOrAdmin, IsCommentAuthorOrAdmin, IsRaterOrAdmin
+from .permissions import IsOwnerOrAdmin, IsBidderOrAdmin, IsCommentAuthorOrAdmin, IsRaterOrAdmin, IsWalletOwnerOrAdmin
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from django.db.models import Avg
 
@@ -224,3 +224,65 @@ class RatingRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.delete()
+
+class WalletTopUpWithdraw(APIView):
+    permission_classes = [IsWalletOwnerOrAdmin]
+
+    def post(self, request, action):
+        serializer = WalletTransactionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        wallet = request.user.wallet
+        data = serializer.validated_data
+
+        # Verificar que coincide el número de tarjeta con la guardada
+        if data['card_number'] != wallet.card_number:
+            return Response(
+                {'card_number': 'Este número no coincide con el registrado en tu monedero.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        amt = data['amount']
+        if action == 'topup':
+            wallet.balance += amt
+        else:  # withdraw
+            if wallet.balance < amt:
+                return Response(
+                    {'amount': 'Saldo insuficiente para retirar esta cantidad.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            wallet.balance -= amt
+
+        wallet.save()
+        return Response({'balance': wallet.balance}, status=status.HTTP_200_OK)
+    
+
+class WalletBalanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # ¿Existe ya una cartera?
+        try:
+            wallet = request.user.wallet
+            return Response({"balance": wallet.balance})
+        except Wallet.DoesNotExist:
+            return Response(
+                {"detail": "Wallet does not exist. Please provide card number via POST to create it."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def post(self, request):
+        # Solo se permite crearla si aún no existe
+        try:
+            wallet = request.user.wallet
+            return Response(
+                {"detail": "Wallet already exists."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Wallet.DoesNotExist:
+            card_number = request.data.get("card_number")
+            if not card_number:
+                return Response({"detail": "Card number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            wallet = Wallet.objects.create(user=request.user, card_number=card_number)
+            return Response({"detail": "Wallet created successfully.", "balance": wallet.balance})

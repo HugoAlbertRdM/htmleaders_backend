@@ -38,3 +38,13 @@ class IsRaterOrAdmin(permissions.BasePermission):
             return True
         return obj.rater_id == request.user or request.user.is_staff
 
+class IsWalletOwnerOrAdmin(BasePermission):
+    """
+    Permite acceder al saldo del monedero solo si el usuario es el propietario
+    o es un administrador.
+    """
+    def has_object_permission(self, request, view, obj):
+        # Si el método es GET, permitimos acceso solo si el usuario es propietario del monedero
+        if request.method == 'GET':
+            return obj.user == request.user or request.user.is_staff
+        return False

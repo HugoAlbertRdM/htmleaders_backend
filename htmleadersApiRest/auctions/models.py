@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from users.models import CustomUser
 from django.db.models import Avg
 
@@ -65,3 +65,31 @@ class Rating(models.Model):
     rater = models.CharField(max_length=150, null=True, blank=True)
     rater_id = models.ForeignKey(CustomUser, related_name='ratings', on_delete=models.CASCADE)
     auction = models.ForeignKey(Auction, related_name='ratings', on_delete=models.CASCADE)
+
+
+class Wallet(models.Model):
+    user = models.OneToOneField(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='wallet'
+    )
+    card_number = models.CharField(
+        max_length=19,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{13,19}$',
+                message='El número de tarjeta debe contener solo dígitos y tener entre 13 y 19 caracteres'
+            )
+        ],
+        help_text='Número de tarjeta (13–19 dígitos)'
+    )
+    balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text='Saldo disponible en el monedero'
+    )
+
+    def __str__(self):
+        return f"Wallet({self.user.username}): {self.balance}€"

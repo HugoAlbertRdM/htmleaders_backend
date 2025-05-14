@@ -3,6 +3,7 @@ from .models import Category, Auction, Bid, Comment, Rating
 from django.utils import timezone
 from datetime import timedelta
 from drf_spectacular.utils import extend_schema_field
+from django.core.validators import RegexValidator
 
 
 class CategoryListCreateSerializer(serializers.ModelSerializer):
@@ -85,3 +86,20 @@ class RatingDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rating
         fields = '__all__'
+
+
+class WalletTransactionSerializer(serializers.Serializer):
+    card_number = serializers.CharField(
+        min_length=13, max_length=19,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{13,19}$',
+                message='El número de tarjeta debe contener solo dígitos y tener entre 13 y 19 caracteres'
+            )
+        ]
+    )
+    amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2,
+        min_value=10,
+        error_messages={'min_value': 'La cantidad debe ser al menos 10€'}
+    )
