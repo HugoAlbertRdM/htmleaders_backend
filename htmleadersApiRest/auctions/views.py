@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from .models import Category, Auction, Bid, Comment, Rating
 from django.utils import timezone
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Q
 from .serializers import CategoryListCreateSerializer, CategoryDetailSerializer, AuctionListCreateSerializer, AuctionDetailSerializer, BidListCreateSerializer, CommentSerializer, RatingDetailSerializer, RatingListCreateSerializer
 from rest_framework.views import APIView
@@ -31,6 +32,7 @@ class AuctionListCreate(generics.ListCreateAPIView):
     queryset = Auction.objects.all()
     serializer_class = AuctionListCreateSerializer
     filter_backends = [DjangoFilterBackend]
+    parser_classes = [MultiPartParser, FormParser]
     filterset_fields = ['category', 'price']
 
     def get_permissions(self):

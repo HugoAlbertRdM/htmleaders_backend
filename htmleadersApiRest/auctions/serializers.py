@@ -20,6 +20,7 @@ class AuctionListCreateSerializer(serializers.ModelSerializer):
     closing_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ")
     isOpen = serializers.SerializerMethodField(read_only=True)
     rating = serializers.FloatField(read_only=True)
+    thumbnail = serializers.ImageField()
 
     class Meta:
         model = Auction
@@ -40,6 +41,7 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
     closing_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ")
     isOpen = serializers.SerializerMethodField(read_only=True)
     rating = serializers.FloatField(read_only=True)
+    thumbnail = serializers.ImageField()
 
     class Meta:
         model = Auction

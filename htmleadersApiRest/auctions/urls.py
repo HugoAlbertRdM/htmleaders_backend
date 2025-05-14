@@ -18,3 +18,5 @@ urlpatterns = [
     path('<int:auction_pk>/rating/', RatingListCreate.as_view(), name='rating-list-create'),
     path('<int:auction_pk>/rating/<int:pk>/', RatingRetrieveUpdateDestroy.as_view(), name='rating-detail'),
 ]
+
+
